@@ -2,35 +2,53 @@
 
 const url = require('url')
 const jwt = require('jsonwebtoken')
+const jwksRsa = require('jwks-rsa')
 
-module.exports = exports = (secret, whitelist, config = {}) => (fn) => {
+module.exports = exports = (config) => (fn) => {
 
-    if (!secret) {
-        throw Error('micro-jwt-auth must be initialized passing a secret to decode incoming JWT token')
+    let jwksRsaClient = undefined
+    if (!config.secret && !config.jwksRsaConfig) {
+        throw Error('micro-jwt-jwks-rsa-auth must be initialized passing either a public key from jwks (secret) or jwks-rsa configuration (jwksRsaConfig) configuration option to decode incoming JWT token')
+    }
+    if (config.jwksRsaConfig && !jwksRsaClient) {
+        jwksRsaClient = jwksRsa(config.jwksRsaConfig)
+        jwksRsaClient.getSigningKeyAsync = (kid) => {
+            return new Promise((resolve, reject) => {
+                jwksRsaClient.getSigningKey(kid, (err, key) => {
+                    if (err) reject(err)
+                    else resolve(key)
+                })
+            })
+        }
     }
 
-    if (!Array.isArray(whitelist)) {
-        config = whitelist || {}
-    }
-
-    return (req, res) => {
+    return async (req, res) => {
         const bearerToken = req.headers.authorization
         const pathname = url.parse(req.url).pathname
-        const whitelisted = Array.isArray(whitelist) && whitelist.indexOf(pathname) >= 0
+        const whitelisted = Array.isArray(config.whitelist) && config.whitelist.indexOf(pathname) >= 0
 
         if (!bearerToken && !whitelisted) {
             res.writeHead(401)
-            res.end(config.resAuthMissing || 'missing Authorization header')
+            res.end(config.resAuthMissing || 'Missing Authorization header')
             return
         }
 
         try {
             const token = bearerToken.replace('Bearer ', '')
-            req.jwt = jwt.verify(token, secret)
+            if (jwksRsaClient) {
+                const kid = jwt.decode(token, {complete: true}).header.kid
+                let key = await jwksRsaClient.getSigningKeyAsync(kid)
+                let publicKey = key.publicKey || key.rsaPublicKey
+                req.jwt = jwt.verify(token, publicKey)
+            }
+            else {
+                req.jwt = jwt.verify(token, config.secret)
+                
+            }
         } catch(err) {
             if (!whitelisted) {
               res.writeHead(401)
-              res.end(config.resAuthInvalid || 'invalid token in Authorization header')
+              res.end(config.resAuthInvalid || 'Invalid token in Authorization header')
               return
             }
         }

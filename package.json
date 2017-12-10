@@ -4,7 +4,8 @@
   "description": "jwt authencication wrapper for zeit/micro",
   "author": "jaga santagostino <jagasantagostino@gmail.com>",
   "dependencies": {
-    "jsonwebtoken": "7.3.0"
+    "jsonwebtoken": "7.3.0",
+    "jwks-rsa": "^1.2.1"
   },
   "devDependencies": {
     "jest": "^18.1.0"
@@ -16,6 +17,6 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kandros/micro-jwt-auth.git"
+    "url": "git+https://github.com/mikkorepolainen/micro-jwt-auth.git"
   }
 }

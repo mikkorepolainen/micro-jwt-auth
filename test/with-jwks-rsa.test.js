@@ -5,13 +5,13 @@ const VALID_HEADER = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMj
 const INVALID_HEADER = 'Bearer wrong.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IldhbHRlciBXaGl0ZSIsImFkbWluIjp0cnVlfQ.YyF_yOQsTSQghvM08WBp7VhsHRv-4Ir4eMQvsEycY1A'
 const JWT_CONTENT = { sub: '1234567890', name: 'Walter White', admin: true }
 
-test('error throwed if secret undefined', () => {
+test('error thrown if jwksRsaConfig undefined', async () => {
   expect(
-    () => jwtAuth()()
-  ).toThrow('micro-jwt-auth must be initialized passing a secret to decode incoming JWT token')
+    () => jwtAuth({})()
+  ).toThrow('micro-jwt-jwks-rsa-auth must be initialized passing either a public key from jwks (secret) or jwks-rsa configuration (jwksRsaConfig) configuration option to decode incoming JWT token')
 });
 
-test('case of request has not authorization header', () => {
+test('case of request has not authorization header', async () => {
 
   const request = {
     headers: {},
@@ -23,14 +23,14 @@ test('case of request has not authorization header', () => {
     end: jest.fn().mockImplementation()
   };
 
-  const result = jwtAuth('mySecret')()(request, response)
+  const result = await jwtAuth({ jwksRsaConfig: {} })()(request, response)
 
   expect(result).toBeUndefined()
   expect(response.writeHead).toHaveBeenCalledWith(401)
-  expect(response.end).toHaveBeenCalledWith('missing Authorization header')
+  expect(response.end).toHaveBeenCalledWith('Missing Authorization header')
 });
 
-test('that all works fine: no errors', () => {
+test('that all works fine: no errors', async () => {
 
   const request = {
     headers: {
@@ -44,7 +44,7 @@ test('that all works fine: no errors', () => {
     end: jest.fn().mockImplementation()
   };
 
-  const result = jwtAuth('mySecret')(() => 'Good job!')(request, response)
+  const result = await jwtAuth({ jwksRsaConfig: {} })(() => 'Good job!')(request, response)
 
   expect(result).toEqual('Good job!')
   expect(response.writeHead).toHaveBeenCalledTimes(0)
@@ -52,7 +52,7 @@ test('that all works fine: no errors', () => {
   expect(request.jwt).toEqual(JWT_CONTENT)
 })
 
-test('wrong bearer case', () => {
+test('wrong bearer case', async () => {
 
   const request = {
     headers: {
@@ -66,15 +66,15 @@ test('wrong bearer case', () => {
     end: jest.fn().mockImplementation()
   };
 
-  const result = jwtAuth('mySecret')(() => {})(request, response)
+  const result = await jwtAuth({ jwksRsaConfig: {} })(() => {})(request, response)
 
   expect(result).toBeUndefined()
   expect(response.writeHead).toHaveBeenCalledWith(401)
-  expect(response.end).toHaveBeenCalledWith('invalid token in Authorization header')
+  expect(response.end).toHaveBeenCalledWith('Invalid token in Authorization header')
 
 })
 
-test('no need authorization bearer if whitelisted path', () => {
+test('no need authorization bearer if whitelisted path', async () => {
 
   const request = {
     headers: {},
@@ -86,7 +86,7 @@ test('no need authorization bearer if whitelisted path', () => {
     end: jest.fn().mockImplementation()
   };
 
-  const result = jwtAuth('mySecret', [ '/domain/resources/1' ])(() => 'Good job!')(request, response)
+  const result = await jwtAuth({ jwksRsaConfig: {}, whitelist: [ '/domain/resources/1' ] })(() => 'Good job!')(request, response)
 
   expect(result).toEqual('Good job!')
   expect(response.writeHead).toHaveBeenCalledTimes(0)
@@ -94,7 +94,7 @@ test('no need authorization bearer if whitelisted path', () => {
 
 })
 
-test('decode jwt even for whitelisted path', () => {
+test('decode jwt even for whitelisted path', async () => {
 
   const request = {
     headers: {
@@ -108,7 +108,7 @@ test('decode jwt even for whitelisted path', () => {
     end: jest.fn().mockImplementation()
   };
 
-  const result = jwtAuth('mySecret', [ '/domain/resources/1' ])(() => 'Good job!')(request, response)
+  const result = await jwtAuth({ jwksRsaConfig: {}, whitelist: [ '/domain/resources/1' ] })(() => 'Good job!')(request, response)
 
   expect(result).toEqual('Good job!')
   expect(response.writeHead).toHaveBeenCalledTimes(0)
@@ -116,7 +116,7 @@ test('decode jwt even for whitelisted path', () => {
   expect(request.jwt).toEqual(JWT_CONTENT)
 })
 
-test('do not throw error if jwt is invalid for whitelisted path', () => {
+test('do not throw error if jwt is invalid for whitelisted path', async () => {
 
   const request = {
     headers: {
@@ -130,7 +130,7 @@ test('do not throw error if jwt is invalid for whitelisted path', () => {
     end: jest.fn().mockImplementation()
   };
 
-  const result = jwtAuth('mySecret', [ '/domain/resources/1' ])(() => 'Good job!')(request, response)
+  const result = await jwtAuth({ jwksRsaConfig: {}, whitelist: [ '/domain/resources/1' ] })(() => 'Good job!')(request, response)
 
   expect(result).toEqual('Good job!')
   expect(response.writeHead).toHaveBeenCalledTimes(0)
@@ -138,7 +138,7 @@ test('do not throw error if jwt is invalid for whitelisted path', () => {
   expect(request.jwt).toBeUndefined()
 })
 
-test('custom response, wrong bearer', () => {
+test('custom response, wrong bearer', async () => {
 
   const request = {
     headers: {
@@ -153,13 +153,13 @@ test('custom response, wrong bearer', () => {
   }
 
   const customRes = `${Math.random()}`
-  const result = jwtAuth('mySecret', [], { resAuthInvalid: customRes })(() => {})(request, response)
+  const result = await jwtAuth({ jwksRsaConfig: {}, resAuthInvalid: customRes })(() => {})(request, response)
 
   expect(response.end).toHaveBeenCalledWith(customRes)
 
 })
 
-test('custom response, missing bearer', () => {
+test('custom response, missing bearer', async () => {
 
   const request = {
     headers: {},
@@ -172,7 +172,7 @@ test('custom response, missing bearer', () => {
   }
 
   const customRes = `${Math.random()}`
-  const result = jwtAuth('mySecret', { resAuthMissing: customRes })()(request, response)
+  const result = await jwtAuth({ jwksRsaConfig: {}, resAuthMissing: customRes })()(request, response)
 
   expect(response.end).toHaveBeenCalledWith(customRes)
 

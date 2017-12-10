@@ -17,7 +17,7 @@ const jwtAuth = require('micro-jwt-auth')
     if Authorization Bearer is not present or not valid, return 401
 */
 
-module.exports = jwtAuth('my_jwt_secret')(async(req, res) => {
+module.exports = jwtAuth({ secret: 'my_jwt_secret' })(async(req, res) => {
   return `Ciaone ${req.jwt.username}!`
 })
 ```
@@ -36,7 +36,7 @@ const handle = async(req, res) => {
 }
 
 module.exports = compose(
-    jwtAuth(process.env.jwt_secret),
+    jwtAuth({ secret: process.env.jwt_secret }),
     anotherWrapper,
     analitycsWrapper,
     redirectWrapper,
@@ -56,7 +56,9 @@ const jwtAuth = require('micro-jwt-auth')
     Bypass authentication for login route
 */
 
-module.exports = jwtAuth('my_jwt_secret', [ 'api/login' ])(async(req, res) => {
+module.exports = jwtAuth({ secret: 'my_jwt_secret',
+  whitelist: [ 'api/login' ]
+})(async(req, res) => {
   return `Ciaone ${req.jwt.username}!`
 })
 ```
@@ -72,7 +74,8 @@ const jwtAuth = require('micro-jwt-auth')
     You can overwrite the default response with the optional config object
 */
 
-module.exports = jwtAuth('my_jwt_secret', ['api/login'], {
+module.exports = jwtAuth({ secret: 'my_jwt_secret',
+  whitelist: [ 'api/login' ], 
   resAuthInvalid: 'Error: Invalid authentication token',
   resAuthMissing: 'Error: Missing authentication token'
 })(async(req, res) => {
@@ -83,10 +86,54 @@ module.exports = jwtAuth('my_jwt_secret', ['api/login'], {
   You may skip the whitelist if unnecessary
 */
 
-module.exports = jwtAuth('my_jwt_secret', {
+module.exports = jwtAuth({ secret: 'my_jwt_secret',
   resAuthInvalid: 'Error: Invalid authentication token',
   resAuthMissing: 'Error: Missing authentication token'
 })(async(req, res) => {
   return `Ciaone ${req.jwt.username}!`
 })
 ```
+
+#### with jwks-rsa instead of fixed secret
+
+```javascript
+'use strict'
+
+const jwtAuth = require('micro-jwt-auth')
+const ms = require('ms')
+
+const jwksRsaConfig = {
+  strictSsl: true,
+  cache: true,
+  cacheMaxEntries: 5,
+  cacheMaxAge: ms('10h'),
+  jwksUri: 'https://<your-auth-domain>/.well-known/jwks.json'
+}
+const auth = jwtAuth({ jwksRsaConfig: jwksRsaConfig });
+
+const handler = async(req, res) => {
+  return `Ciaone ${req.jwt.username}!`
+}
+
+module.exports = auth(handler)
+
+/*
+  With micro-router
+*/
+const { router, get, post, put, patch, del } = require('microrouter')
+
+// All routes
+const routes = router(
+  get('/route1/', handler),
+  get('/route2/', handler)
+)
+module.exports = auth(routes)
+
+// Individual routes
+const routes = router(
+  get('/route1/', auth(handler)),
+  get('/route2/', auth(handler))
+)
+module.exports = routes
+```
+
