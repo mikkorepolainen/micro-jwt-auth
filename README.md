@@ -1,5 +1,5 @@
-[![Build Status](https://travis-ci.org/kandros/micro-jwt-auth.svg?branch=master)](https://travis-ci.org/kandros/micro-jwt-auth)
-[![npm](https://img.shields.io/npm/v/micro-jwt-auth.svg)](https://www.npmjs.com/package/micro-jwt-auth)
+[![Build Status](https://travis-ci.org/mikkorepolainen/micro-jwt-auth.svg?branch=master)](https://travis-ci.org/mikkorepolainen/micro-jwt-auth)
+<!-- [![npm](https://img.shields.io/npm/v/micro-jwt-auth.svg)](https://www.npmjs.com/package/micro-jwt-auth) -->
 # micro-jwt-auth
 [json web token(jwt)](https://jwt.io/introduction/) authorization wrapper for [Micro](https://github.com/zeit/micro)
 

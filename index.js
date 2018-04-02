@@ -4,6 +4,18 @@ const url = require('url')
 const jwt = require('jsonwebtoken')
 const jwksRsa = require('jwks-rsa')
 
+/**
+ * Middleware for validate JWT either with a fixed secret or using a jwks-rsa configuration object.
+ * 
+ * @param config {object}
+ * @param {string} [config.secret] Fixed secret
+ * @param {object} [config.jwksRsaConfig] jwks-rsa configuration object
+ * @param {string[]} [config.validAudiences] List of audiences considered valid. If omitted, audience is not validated.
+ * @param {string[]} [config.whitelist] List of paths where authentication is not enforced
+ * @param {string} [config.resAuthMissing] Custom error message for missing authentication header
+ * @param {string} [config.resAuthInvalid] Custom error message for invalid token
+ * @param {string} [config.resAudInvalid] Custom error message for invalid audience
+ */
 module.exports = exports = (config) => (fn) => {
 
     let jwksRsaClient = undefined
@@ -44,6 +56,15 @@ module.exports = exports = (config) => (fn) => {
             else {
                 req.jwt = jwt.verify(token, config.secret)
                 
+            }
+            //if (!~req.jwt.aud.indexOf(validAudience)) {
+            if (config.validAudiences) {
+                let matchingAudiences = config.validAudiences.filter(aud => req.jwt.aud.includes(aud))
+                if (matchingAudiences.length === 0) {
+                  res.writeHead(401)
+                  res.end(config.resAudInvalid || 'invalid audience')
+                  return
+                }
             }
         } catch(err) {
             if (!whitelisted) {
