@@ -2,6 +2,7 @@
 <!-- [![npm](https://img.shields.io/npm/v/micro-jwt-auth.svg)](https://www.npmjs.com/package/micro-jwt-auth) -->
 # micro-jwt-auth
 [json web token(jwt)](https://jwt.io/introduction/) authorization wrapper for [Micro](https://github.com/zeit/micro)
+with the option to use [jwks-rsa](https://www.npmjs.com/package/jwks-rsa) ([node-jwks-rsa](https://github.com/auth0/node-jwks-rsa)) instead of a fixed secret
 
 > An `Authorization` header with value `Bearer MY_TOKEN_HERE` is expected
 
@@ -110,6 +111,7 @@ const jwksRsaConfig = {
   jwksUri: 'https://<your-auth-domain>/.well-known/jwks.json'
 }
 const auth = jwtAuth({ jwksRsaConfig: jwksRsaConfig });
+// Fixed kid: jwtAuth({ jwksRsaConfig: jwksRsaConfig, kid: 'abcdefg' });
 
 const handler = async(req, res) => {
   return `Ciaone ${req.jwt.username}!`

@@ -5,11 +5,17 @@ const jwt = require('jsonwebtoken')
 const jwksRsa = require('jwks-rsa')
 
 /**
- * Middleware for validate JWT either with a fixed secret or using a jwks-rsa configuration object.
+ * Middleware for validating JWT either with a fixed secret or using jwks-rsa.
+ * 
+ * Configuration options:
+ *  - fixed secret only (no jwks-rsa)
+ *  - jwksRsaConfig configuration only (kid is looked up from request jwt token)
+ *  - jwksRsaConfig and fixed kid (kid on jwt is ignored)
  * 
  * @param config {object}
  * @param {string} [config.secret] Fixed secret
  * @param {object} [config.jwksRsaConfig] jwks-rsa configuration object
+ * @param {string} [config.kid] jwks-rsa fixed kid
  * @param {string[]} [config.validAudiences] List of audiences considered valid. If omitted, audience is not validated.
  * @param {string[]} [config.whitelist] List of paths where authentication is not enforced
  * @param {string} [config.resAuthMissing] Custom error message for missing authentication header
@@ -48,11 +54,11 @@ module.exports = exports = (config) => (fn) => {
         try {
             const token = bearerToken.replace('Bearer ', '')
             if (jwksRsaClient) {
-                const kid = jwt.decode(token, {complete: true}).header.kid
+                let kid = config.kid || jwt.decode(token, {complete: true}).header.kid
                 let key = await jwksRsaClient.getSigningKeyAsync(kid)
                 let publicKey = key.publicKey || key.rsaPublicKey
                 req.jwt = jwt.verify(token, publicKey)
-            }
+          }
             else {
                 req.jwt = jwt.verify(token, config.secret)
                 

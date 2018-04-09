@@ -5,7 +5,7 @@ const VALID_HEADER = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMj
 const INVALID_HEADER = 'Bearer wrong.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IldhbHRlciBXaGl0ZSIsImFkbWluIjp0cnVlfQ.YyF_yOQsTSQghvM08WBp7VhsHRv-4Ir4eMQvsEycY1A'
 const JWT_CONTENT = { sub: '1234567890', name: 'Walter White', admin: true }
 
-test('error thrown if jwksRsaConfig undefined', async () => {
+test('error thrown if secret undefined', async () => {
   expect(
     () => jwtAuth({})()
   ).toThrow('micro-jwt-jwks-rsa-auth must be initialized passing either a public key from jwks (secret) or jwks-rsa configuration (jwksRsaConfig) configuration option to decode incoming JWT token')
@@ -23,7 +23,7 @@ test('case of request has not authorization header', async () => {
     end: jest.fn().mockImplementation()
   };
 
-  const result = await jwtAuth({ jwksRsaConfig: {} })()(request, response)
+  const result = await jwtAuth({ secret: 'mySecret' })()(request, response)
 
   expect(result).toBeUndefined()
   expect(response.writeHead).toHaveBeenCalledWith(401)
@@ -44,12 +44,12 @@ test('that all works fine: no errors', async () => {
     end: jest.fn().mockImplementation()
   };
 
-  const result = await jwtAuth({ jwksRsaConfig: {} })(() => 'Good job!')(request, response)
+  const result = await jwtAuth({ secret: 'mySecret' })(() => 'Good job!')(request, response)
 
+  expect(request.jwt).toEqual(JWT_CONTENT)
   expect(result).toEqual('Good job!')
   expect(response.writeHead).toHaveBeenCalledTimes(0)
   expect(response.end).toHaveBeenCalledTimes(0)
-  expect(request.jwt).toEqual(JWT_CONTENT)
 })
 
 test('wrong bearer case', async () => {
@@ -66,7 +66,7 @@ test('wrong bearer case', async () => {
     end: jest.fn().mockImplementation()
   };
 
-  const result = await jwtAuth({ jwksRsaConfig: {} })(() => {})(request, response)
+  const result = await jwtAuth({ secret: 'mySecret' })(() => {})(request, response)
 
   expect(result).toBeUndefined()
   expect(response.writeHead).toHaveBeenCalledWith(401)
@@ -86,7 +86,7 @@ test('no need authorization bearer if whitelisted path', async () => {
     end: jest.fn().mockImplementation()
   };
 
-  const result = await jwtAuth({ jwksRsaConfig: {}, whitelist: [ '/domain/resources/1' ] })(() => 'Good job!')(request, response)
+  const result = await jwtAuth({ secret: 'mySecret', whitelist: [ '/domain/resources/1' ] })(() => 'Good job!')(request, response)
 
   expect(result).toEqual('Good job!')
   expect(response.writeHead).toHaveBeenCalledTimes(0)
@@ -108,7 +108,7 @@ test('decode jwt even for whitelisted path', async () => {
     end: jest.fn().mockImplementation()
   };
 
-  const result = await jwtAuth({ jwksRsaConfig: {}, whitelist: [ '/domain/resources/1' ] })(() => 'Good job!')(request, response)
+  const result = await jwtAuth({ secret: 'mySecret', whitelist: [ '/domain/resources/1' ] })(() => 'Good job!')(request, response)
 
   expect(result).toEqual('Good job!')
   expect(response.writeHead).toHaveBeenCalledTimes(0)
@@ -130,7 +130,7 @@ test('do not throw error if jwt is invalid for whitelisted path', async () => {
     end: jest.fn().mockImplementation()
   };
 
-  const result = await jwtAuth({ jwksRsaConfig: {}, whitelist: [ '/domain/resources/1' ] })(() => 'Good job!')(request, response)
+  const result = await jwtAuth({ secret: 'mySecret', whitelist: [ '/domain/resources/1' ] })(() => 'Good job!')(request, response)
 
   expect(result).toEqual('Good job!')
   expect(response.writeHead).toHaveBeenCalledTimes(0)
@@ -153,7 +153,7 @@ test('custom response, wrong bearer', async () => {
   }
 
   const customRes = `${Math.random()}`
-  const result = await jwtAuth({ jwksRsaConfig: {}, resAuthInvalid: customRes })(() => {})(request, response)
+  const result = await jwtAuth({ secret: 'mySecret', resAuthInvalid: customRes })(() => {})(request, response)
 
   expect(response.end).toHaveBeenCalledWith(customRes)
 
@@ -172,7 +172,7 @@ test('custom response, missing bearer', async () => {
   }
 
   const customRes = `${Math.random()}`
-  const result = await jwtAuth({ jwksRsaConfig: {}, resAuthMissing: customRes })()(request, response)
+  const result = await jwtAuth({ secret: 'mySecret', resAuthMissing: customRes })(() => {})(request, response)
 
   expect(response.end).toHaveBeenCalledWith(customRes)
 
