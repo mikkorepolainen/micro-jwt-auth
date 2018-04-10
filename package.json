@@ -1,8 +1,8 @@
 {
-  "name": "micro-jwt-auth",
-  "version": "1.9.0",
+  "name": "micro-jwt-jwks-rsa-auth",
+  "version": "0.1.0",
   "description": "jwt authencication wrapper for zeit/micro",
-  "author": "jaga santagostino <jagasantagostino@gmail.com>",
+  "author": "Mikko Repolainen <mikko@repolainen.fi>",
   "dependencies": {
     "jsonwebtoken": "7.3.0",
     "jwks-rsa": "^1.2.1",
