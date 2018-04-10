@@ -5,7 +5,7 @@ const VALID_HEADER = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMj
 const INVALID_HEADER = 'Bearer wrong.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IldhbHRlciBXaGl0ZSIsImFkbWluIjp0cnVlfQ.YyF_yOQsTSQghvM08WBp7VhsHRv-4Ir4eMQvsEycY1A'
 const JWT_CONTENT = { sub: '1234567890', name: 'Walter White', admin: true }
 
-test('error thrown if secret undefined', async () => {
+test('Error thrown if secret undefined', async () => {
   expect(
     () => jwtAuth({})()
   ).toThrow('micro-jwt-jwks-rsa-auth must be initialized passing either a public key from jwks (secret) or jwks-rsa configuration (jwksRsaConfig) configuration option to decode incoming JWT token')
@@ -30,7 +30,7 @@ test('case of request has not authorization header', async () => {
   expect(response.end).toHaveBeenCalledWith('Missing Authorization header')
 });
 
-test('that all works fine: no errors', async () => {
+test('All works fine: no errors', async () => {
 
   const request = {
     headers: {
@@ -52,7 +52,7 @@ test('that all works fine: no errors', async () => {
   expect(response.end).toHaveBeenCalledTimes(0)
 })
 
-test('wrong bearer case', async () => {
+test('Wrong bearer case', async () => {
 
   const request = {
     headers: {
@@ -74,7 +74,7 @@ test('wrong bearer case', async () => {
 
 })
 
-test('no need authorization bearer if whitelisted path', async () => {
+test('No need for bearer token if whitelisted path', async () => {
 
   const request = {
     headers: {},
@@ -94,7 +94,7 @@ test('no need authorization bearer if whitelisted path', async () => {
 
 })
 
-test('decode jwt even for whitelisted path', async () => {
+test('Decode jwt even for whitelisted path', async () => {
 
   const request = {
     headers: {
@@ -116,7 +116,7 @@ test('decode jwt even for whitelisted path', async () => {
   expect(request.jwt).toEqual(JWT_CONTENT)
 })
 
-test('do not throw error if jwt is invalid for whitelisted path', async () => {
+test('No error if jwt is invalid for whitelisted path', async () => {
 
   const request = {
     headers: {
@@ -138,7 +138,7 @@ test('do not throw error if jwt is invalid for whitelisted path', async () => {
   expect(request.jwt).toBeUndefined()
 })
 
-test('custom response, wrong bearer', async () => {
+test('Custom response, wrong token', async () => {
 
   const request = {
     headers: {
@@ -159,7 +159,7 @@ test('custom response, wrong bearer', async () => {
 
 })
 
-test('custom response, missing bearer', async () => {
+test('Custom response, missing token', async () => {
 
   const request = {
     headers: {},

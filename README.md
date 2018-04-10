@@ -1,106 +1,72 @@
 [![Build Status](https://travis-ci.org/mikkorepolainen/micro-jwt-auth.svg?branch=master)](https://travis-ci.org/mikkorepolainen/micro-jwt-auth)
 <!-- [![npm](https://img.shields.io/npm/v/micro-jwt-auth.svg)](https://www.npmjs.com/package/micro-jwt-auth) -->
-# micro-jwt-auth
+# micro-jwt-jwks-rsa-auth
 [json web token(jwt)](https://jwt.io/introduction/) authorization wrapper for [Micro](https://github.com/zeit/micro)
-with the option to use [jwks-rsa](https://www.npmjs.com/package/jwks-rsa) ([node-jwks-rsa](https://github.com/auth0/node-jwks-rsa)) instead of a fixed secret
+with the option to use [jwks-rsa](https://www.npmjs.com/package/jwks-rsa) ([node-jwks-rsa](https://github.com/auth0/node-jwks-rsa)) instead of a fixed secret.
+Based on [micro-jwt-auth](https://github.com/kandros/micro-jwt-auth).
 
 > An `Authorization` header with value `Bearer MY_TOKEN_HERE` is expected
 
-## examples
+## Usage
 
-#### with no other wrappers
 ```javascript
-'use strict'
+const jwtAuth = require('micro-jwt-jwks-rsa-auth')
 
-const jwtAuth = require('micro-jwt-auth')
-
-/*
-    if Authorization Bearer is not present or not valid, return 401
-*/
-
-module.exports = jwtAuth({ secret: 'my_jwt_secret' })(async(req, res) => {
-  return `Ciaone ${req.jwt.username}!`
+const auth = jwtAuth({
+  secret,
+  jwksRsaConfig,
+  kid,
+  validAudiences,
+  whitelist,
+  resAuthMissing
+  resAuthInvalid,
+  resAudInvalid
 })
+
+const handler = async(req, res) => { ... } // Your micro logic
+
+module.exports = auth(handler)
 ```
 
-#### with multiple wrappers
+The token will be available as `req.jwt` after successfully decoded.
+
+### Three ways of operation
+
+ - fixed `secret` only (no jwks-rsa)
+ - `jwksRsaConfig` configuration only (`kid` is looked up from request jwt token headers)
+ - `jwksRsaConfig` and fixed `kid` (`kid` on jwt is ignored)
+
+### Optional Configuration Options
+
+ - `validAudiences`: List of audiences considered valid. If omitted, audience is not validated.
+ - `whitelist`: List of paths where authentication is not enforced (token will still be decoded if present)
+ - `resAuthMissing`: Custom error message for missing authentication header
+ - `resAuthInvalid`: Custom error message for invalid token
+ - `resAudInvalid`: Custom error message for invalid audience
+
+## Examples
+
+#### With Fixed Secret
 
 ```javascript
 'use strict'
 
-const jwtAuth = require('micro-jwt-auth')
+const jwtAuth = require('micro-jwt-jwks-rsa-auth')
+const auth = jwtAuth({ secret: 'my_jwt_secret' });
 
-const compose = (...fns) => fns.reduce((f, g) => (...args) => f(g(...args)))
-
-const handle = async(req, res) => {
+const handler = async(req, res) => {
   return `Ciaone ${req.jwt.username}!`
 }
 
-module.exports = compose(
-    jwtAuth({ secret: process.env.jwt_secret }),
-    anotherWrapper,
-    analitycsWrapper,
-    redirectWrapper,
-    yetAnotherWrapper
-)(handle)
+module.exports = auth(handler)
 ```
 
-#### with whitelist of paths
-Whitelisted paths make JWT token *optional*. However if valid token is provided it will be  decoded.
+#### With jwks-rsa Instead of Fixed Secret
 
 ```javascript
 'use strict'
 
-const jwtAuth = require('micro-jwt-auth')
-
-/*
-    Bypass authentication for login route
-*/
-
-module.exports = jwtAuth({ secret: 'my_jwt_secret',
-  whitelist: [ 'api/login' ]
-})(async(req, res) => {
-  return `Ciaone ${req.jwt.username}!`
-})
-```
-
-#### with custom responses
-
-```javascript
-'use strict'
-
-const jwtAuth = require('micro-jwt-auth')
-
-/*
-    You can overwrite the default response with the optional config object
-*/
-
-module.exports = jwtAuth({ secret: 'my_jwt_secret',
-  whitelist: [ 'api/login' ], 
-  resAuthInvalid: 'Error: Invalid authentication token',
-  resAuthMissing: 'Error: Missing authentication token'
-})(async(req, res) => {
-  return `Ciaone ${req.jwt.username}!`
-})
-
-/*
-  You may skip the whitelist if unnecessary
-*/
-
-module.exports = jwtAuth({ secret: 'my_jwt_secret',
-  resAuthInvalid: 'Error: Invalid authentication token',
-  resAuthMissing: 'Error: Missing authentication token'
-})(async(req, res) => {
-  return `Ciaone ${req.jwt.username}!`
-})
-```
-
-#### with jwks-rsa instead of fixed secret
-
-```javascript
-'use strict'
-
-const jwtAuth = require('micro-jwt-auth')
+const jwtAuth = require('micro-jwt-jwks-rsa-auth')
 const ms = require('ms')
 
 const jwksRsaConfig = {
@@ -119,10 +85,16 @@ const handler = async(req, res) => {
 
 module.exports = auth(handler)
 
-/*
-  With micro-router
-*/
+```
+
+#### With micro-router
+
+```javascript
+'use strict'
+
 const { router, get, post, put, patch, del } = require('microrouter')
+const jwtAuth = require('micro-jwt-jwks-rsa-auth')
+const auth = jwtAuth(...);
 
 // All routes
 const routes = router(

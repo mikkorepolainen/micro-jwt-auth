@@ -6,7 +6,7 @@ const VALID_HEADER2 = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxM
 const JWT_CONTENT = { sub: '1234567890', name: 'Walter White', admin: true, aud: 'Albuquerque' }
 const JWT_CONTENT2 = { sub: '1234567890', name: 'Walter White', admin: true, aud: ['Albuquerque', 'New Mexico'] }
 
-test('valid audience', async () => {
+test('Valid audience', async () => {
 
   const request = {
     headers: {
@@ -29,7 +29,7 @@ test('valid audience', async () => {
 
 })
 
-test('valid audiences', async () => {
+test('Valid audiences', async () => {
 
   const request = {
     headers: {
@@ -52,7 +52,7 @@ test('valid audiences', async () => {
 
 })
 
-test('invalid audience', async () => {
+test('Invalid audience', async () => {
 
   const request = {
     headers: {
@@ -73,7 +73,7 @@ test('invalid audience', async () => {
 
 })
 
-test('invalid audience custom response', async () => {
+test('Invalid audience custom response', async () => {
 
   const request = {
     headers: {

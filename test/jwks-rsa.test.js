@@ -5,7 +5,7 @@ const VALID_HEADER = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImFiY2R
 const VALID_HEADER2 = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImFiY2RlZiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IldhbHRlciBXaGl0ZSIsImFkbWluIjp0cnVlfQ.aQRs409SELcrURUWuri8gOILoGInojqoiXnhiLod2fw'
 const JWT_CONTENT = { sub: '1234567890', name: 'Walter White', admin: true }
 
-test('jwks-rsa configuration', async () => {
+test('With jwks-rsa configuration', async () => {
 
   const request = {
     headers: {
@@ -27,7 +27,7 @@ test('jwks-rsa configuration', async () => {
   expect(request.jwt).toEqual(JWT_CONTENT)
 })
 
-test('jwks-rsa with fixed kid', async () => {
+test('With jwks-rsa configuration and fixed kid', async () => {
 
   const request = {
     headers: {
