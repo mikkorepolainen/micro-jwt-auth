@@ -3,15 +3,16 @@
 const url = require('url')
 const jwt = require('jsonwebtoken')
 const jwksRsa = require('jwks-rsa')
+const { createError } = require('micro')
 
 /**
  * Middleware for validating JWT either with a fixed secret or using jwks-rsa.
- * 
+ *
  * Configuration options:
  *  - fixed secret only (no jwks-rsa)
  *  - jwksRsaConfig configuration only (kid is looked up from request jwt token)
  *  - jwksRsaConfig and fixed kid (kid on jwt is ignored)
- * 
+ *
  * @param config {object}
  * @param {string} [config.secret] Fixed secret
  * @param {object} [config.jwksRsaConfig] jwks-rsa configuration object
@@ -23,63 +24,54 @@ const jwksRsa = require('jwks-rsa')
  * @param {string} [config.resAudInvalid] Custom error message for invalid audience
  */
 module.exports = exports = (config) => (fn) => {
-
-    let jwksRsaClient = undefined
-    if (!config.secret && !config.jwksRsaConfig) {
-        throw Error('micro-jwt-jwks-rsa-auth must be initialized passing either a public key from jwks (secret) or jwks-rsa configuration (jwksRsaConfig) configuration option to decode incoming JWT token')
+  let jwksRsaClient
+  if (!config || (!config.secret && !config.jwksRsaConfig)) {
+    throw Error('micro-jwt-jwks-rsa-auth must be initialized passing either a public key from jwks (secret) or jwks-rsa configuration (jwksRsaConfig) configuration option to decode incoming JWT token')
+  }
+  if (config.jwksRsaConfig && !jwksRsaClient) {
+    jwksRsaClient = jwksRsa(config.jwksRsaConfig)
+    jwksRsaClient.getSigningKeyAsync = (kid) => {
+      return new Promise((resolve, reject) => {
+        jwksRsaClient.getSigningKey(kid, (err, key) => {
+          if (err) reject(err)
+          else resolve(key)
+        })
+      })
     }
-    if (config.jwksRsaConfig && !jwksRsaClient) {
-        jwksRsaClient = jwksRsa(config.jwksRsaConfig)
-        jwksRsaClient.getSigningKeyAsync = (kid) => {
-            return new Promise((resolve, reject) => {
-                jwksRsaClient.getSigningKey(kid, (err, key) => {
-                    if (err) reject(err)
-                    else resolve(key)
-                })
-            })
-        }
+  }
+
+  return async (req, res) => {
+    const bearerToken = req.headers.authorization
+    const pathname = url.parse(req.url).pathname
+    const whitelisted = Array.isArray(config.whitelist) && config.whitelist.indexOf(pathname) >= 0
+
+    if (!bearerToken && !whitelisted) {
+      throw createError(401, config.resAuthMissing || 'Missing Authorization header')
     }
 
-    return async (req, res) => {
-        const bearerToken = req.headers.authorization
-        const pathname = url.parse(req.url).pathname
-        const whitelisted = Array.isArray(config.whitelist) && config.whitelist.indexOf(pathname) >= 0
-
-        if (!bearerToken && !whitelisted) {
-            res.writeHead(401)
-            res.end(config.resAuthMissing || 'Missing Authorization header')
-            return
-        }
-
-        try {
-            const token = bearerToken.replace('Bearer ', '')
-            if (jwksRsaClient) {
-                let kid = config.kid || jwt.decode(token, {complete: true}).header.kid
-                let key = await jwksRsaClient.getSigningKeyAsync(kid)
-                let publicKey = key.publicKey || key.rsaPublicKey
-                req.jwt = jwt.verify(token, publicKey)
-          }
-            else {
-                req.jwt = jwt.verify(token, config.secret)
-                
-            }
-            //if (!~req.jwt.aud.indexOf(validAudience)) {
-            if (config.validAudiences) {
-                let matchingAudiences = config.validAudiences.filter(aud => req.jwt.aud.includes(aud))
-                if (matchingAudiences.length === 0) {
-                  res.writeHead(401)
-                  res.end(config.resAudInvalid || 'invalid audience')
-                  return
-                }
-            }
-        } catch(err) {
-            if (!whitelisted) {
-              res.writeHead(401)
-              res.end(config.resAuthInvalid || 'Invalid token in Authorization header')
-              return
-            }
-        }
-
-        return fn(req, res)
+    try {
+      const token = bearerToken.replace('Bearer ', '')
+      if (jwksRsaClient) {
+        let kid = config.kid || jwt.decode(token, {complete: true}).header.kid
+        let key = await jwksRsaClient.getSigningKeyAsync(kid)
+        let publicKey = key.publicKey || key.rsaPublicKey
+        req.jwt = jwt.verify(token, publicKey)
+      } else {
+        req.jwt = jwt.verify(token, config.secret)
+      }
+    } catch (err) {
+      if (!whitelisted) {
+        throw createError(401, config.resAuthInvalid || 'Invalid token in Authorization header')
+      }
     }
+    // if (!~req.jwt.aud.indexOf(validAudience)) {
+    if (config.validAudiences) {
+      let matchingAudiences = config.validAudiences.filter(aud => req.jwt.aud.includes(aud))
+      if (matchingAudiences.length === 0) {
+        throw createError(401, config.resAudInvalid || 'Invalid audience')
+      }
+    }
+
+    return fn(req, res)
+  }
 }

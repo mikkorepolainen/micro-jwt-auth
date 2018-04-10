@@ -5,13 +5,16 @@
   "author": "jaga santagostino <jagasantagostino@gmail.com>",
   "dependencies": {
     "jsonwebtoken": "7.3.0",
-    "jwks-rsa": "^1.2.1"
+    "jwks-rsa": "^1.2.1",
+    "micro": "^9.1.4"
   },
   "devDependencies": {
-    "jest": "^18.1.0"
+    "jest": "^18.1.0",
+    "standard": "^11.0.1"
   },
   "scripts": {
-    "test": "jest"
+    "test": "standard && jest",
+    "lint": "standard"
   },
   "main": "index.js",
   "license": "MIT",

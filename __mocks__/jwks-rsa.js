@@ -3,9 +3,9 @@ module.exports = exports = (config) => {
   return {
     getSigningKey: (kid, callback) => { // (err, key)
       console.log(kid)
-      if (kid == "bcdefg") callback(undefined, { publicKey: 'mySecret2' })
-      else if (kid == "abcdef") callback(undefined, { publicKey: 'mySecret' })
-      else throw Error("Invalid kid")
+      if (kid === 'bcdefg') callback(null, { publicKey: 'mySecret2' })
+      else if (kid === 'abcdef') callback(null, { publicKey: 'mySecret' })
+      else throw Error('Invalid kid')
     }
   }
 }

@@ -1,3 +1,4 @@
+/* eslint-env jest */
 'use strict'
 
 const jwtAuth = require('../index')
@@ -7,7 +8,6 @@ const JWT_CONTENT = { sub: '1234567890', name: 'Walter White', admin: true, aud:
 const JWT_CONTENT2 = { sub: '1234567890', name: 'Walter White', admin: true, aud: ['Albuquerque', 'New Mexico'] }
 
 test('Valid audience', async () => {
-
   const request = {
     headers: {
       authorization: VALID_HEADER
@@ -26,11 +26,9 @@ test('Valid audience', async () => {
   expect(result).toEqual('Good job!')
   expect(response.writeHead).toHaveBeenCalledTimes(0)
   expect(response.end).toHaveBeenCalledTimes(0)
-
 })
 
 test('Valid audiences', async () => {
-
   const request = {
     headers: {
       authorization: VALID_HEADER2
@@ -49,11 +47,9 @@ test('Valid audiences', async () => {
   expect(result).toEqual('Good job!')
   expect(response.writeHead).toHaveBeenCalledTimes(0)
   expect(response.end).toHaveBeenCalledTimes(0)
-
 })
 
 test('Invalid audience', async () => {
-
   const request = {
     headers: {
       authorization: VALID_HEADER
@@ -66,15 +62,18 @@ test('Invalid audience', async () => {
     end: jest.fn().mockImplementation()
   }
 
-  const result = await jwtAuth({ secret: 'mySecret', validAudiences: [ 'New Mexico', 'Old Mexico' ] })(() => 'Good job!')(request, response)
-
-  expect(request.jwt).toEqual(JWT_CONTENT)
-  expect(response.end).toHaveBeenCalledWith('invalid audience')
-
+  let success = false
+  try {
+    await jwtAuth({ secret: 'mySecret', validAudiences: [ 'New Mexico', 'Old Mexico' ] })(() => 'Good job!')(request, response)
+    success = true
+  } catch (err) {
+    expect(err.statusCode).toBe(401)
+    expect(err.message).toBe('Invalid audience')
+  }
+  expect(success).toBe(false)
 })
 
 test('Invalid audience custom response', async () => {
-
   const request = {
     headers: {
       authorization: VALID_HEADER
@@ -88,9 +87,13 @@ test('Invalid audience custom response', async () => {
   }
 
   const customRes = `${Math.random()}`
-  const result = await jwtAuth({ secret: 'mySecret', validAudiences: [ 'New Mexico', 'Old Mexico' ], resAudInvalid: customRes })(() => 'Good job!')(request, response)
-
-  expect(request.jwt).toEqual(JWT_CONTENT)
-  expect(response.end).toHaveBeenCalledWith(customRes)
-
+  let success = false
+  try {
+    await jwtAuth({ secret: 'mySecret', validAudiences: [ 'New Mexico', 'Old Mexico' ], resAudInvalid: customRes })(() => 'Good job!')(request, response)
+    success = true
+  } catch (err) {
+    expect(err.statusCode).toBe(401)
+    expect(err.message).toBe(customRes)
+  }
+  expect(success).toBe(false)
 })

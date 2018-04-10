@@ -1,5 +1,5 @@
-[![Build Status](https://travis-ci.org/mikkorepolainen/micro-jwt-auth.svg?branch=master)](https://travis-ci.org/mikkorepolainen/micro-jwt-auth)
-<!-- [![npm](https://img.shields.io/npm/v/micro-jwt-auth.svg)](https://www.npmjs.com/package/micro-jwt-auth) -->
+[![Build Status](https://travis-ci.org/mikkorepolainen/micro-jwt-jwks-rsa-auth.svg?branch=master)](https://travis-ci.org/mikkorepolainen/micro-jwt-jwks-rsa-auth)
+<!-- [![npm](https://img.shields.io/npm/v/micro-jwt-jwks-rsa-auth.svg)](https://www.npmjs.com/package/micro-jwt-jwks-rsa-auth) -->
 # micro-jwt-jwks-rsa-auth
 [json web token(jwt)](https://jwt.io/introduction/) authorization wrapper for [Micro](https://github.com/zeit/micro)
 with the option to use [jwks-rsa](https://www.npmjs.com/package/jwks-rsa) ([node-jwks-rsa](https://github.com/auth0/node-jwks-rsa)) instead of a fixed secret.
@@ -29,6 +29,8 @@ module.exports = auth(handler)
 ```
 
 The token will be available as `req.jwt` after successfully decoded.
+
+If the token validation fails, an Error will be thrown with the statusCode property set to 401.
 
 ### Three ways of operation
 
