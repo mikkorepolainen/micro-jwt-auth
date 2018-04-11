@@ -6,7 +6,11 @@ const jwksRsa = require('jwks-rsa')
 const { createError } = require('micro')
 
 /**
- * Middleware for validating JWT either with a fixed secret or using jwks-rsa.
+ * Validate jwt bearer token in request Authorization header.
+ *
+ * The token will be available as `req.jwt` after successfully decoded.
+ *
+ * If the token validation fails, an Error will be thrown with the statusCode property set to 401.
  *
  * Configuration options:
  *  - fixed secret only (no jwks-rsa)
@@ -18,7 +22,7 @@ const { createError } = require('micro')
  * @param {object} [config.jwksRsaConfig] jwks-rsa configuration object
  * @param {string} [config.kid] jwks-rsa fixed kid
  * @param {string[]} [config.validAudiences] List of audiences considered valid. If omitted, audience is not validated.
- * @param {string[]} [config.whitelist] List of paths where authentication is not enforced
+ * @param {string[]} [config.whitelist] List of paths where authentication is not enforced (token will still be decoded if present)
  * @param {string} [config.resAuthMissing] Custom error message for missing authentication header
  * @param {string} [config.resAuthInvalid] Custom error message for invalid token
  * @param {string} [config.resAudInvalid] Custom error message for invalid audience

@@ -1,6 +1,6 @@
 {
   "name": "micro-jwt-jwks-rsa-auth",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "jwt authencication wrapper for zeit/micro",
   "author": "Mikko Repolainen <mikko@repolainen.fi>",
   "dependencies": {
